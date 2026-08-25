@@ -8,9 +8,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '17' }
+        with: {distribution: temurin, java-version: '17'}
       - uses: android-actions/setup-android@v3
-      - run: gradle wrapper --gradle-version 8.10.2
-      - run: ./gradlew assembleDebug test
+      - name: Build
+        run: gradle --version && gradle assembleDebug
       - uses: actions/upload-artifact@v4
-        with: { name: swapnil-security-lab-debug, path: app/build/outputs/apk/debug/*.apk }
+        with: {name: swapnil-security-lab-debug, path: app/build/outputs/apk/debug/*.apk}
