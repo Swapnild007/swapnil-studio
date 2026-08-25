@@ -1,8 +1,0 @@
-{
-  "name": "swapnil-studio",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "openai": "^6.34.0"
-  }
-}
