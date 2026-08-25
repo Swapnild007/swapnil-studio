@@ -1,11 +1,15 @@
 # Swapnil Security Lab
 
-A rootless Android security laboratory inspired by the architecture of StrykerOSS. This project is an independent rebranding/build using GPL-compatible source and retained attribution where required.
+## Build 1 → Build 4
 
-## Build
+This repository has been rebuilt as an Android application, with the four requested development milestones consolidated into **v1.4.0**:
 
-The GitHub Actions workflow builds a debug APK and runs Gradle checks.
+1. Android application foundation and rootless readiness.
+2. Verified ARM64 QEMU + Debian rootless component installer and VM lifecycle.
+3. Local network discovery and terminal interface.
+4. Polished branding, versioning, attribution and repeatable GitHub Actions build.
 
-## Safety
+The rootless engine uses the pinned StrykerOSS v6 rootless component URLs and published SHA-256 checksums. This project retains required open-source attribution and is not an official StrykerOSS product.
 
-Use security tooling only on systems and networks you own or are explicitly authorized to test.
+### Safety
+Use only on systems and networks you own or are explicitly authorized to assess.
