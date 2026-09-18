@@ -1,15 +1,7 @@
-# Swapnil Security Lab
+# Pune Traffic Command Center
 
-## Build 1 → Build 4
+Phase 1: live Pune + PCMC traffic flow, traffic incidents and clickable road-level flow details.
 
-This repository has been rebuilt as an Android application, with the four requested development milestones consolidated into **v1.4.0**:
+Live source: TomTom Traffic API. Deploy on Vercel and configure TOMTOM_API_KEY as a server-side environment variable. Never commit the key.
 
-1. Android application foundation and rootless readiness.
-2. Verified ARM64 QEMU + Debian rootless component installer and VM lifecycle.
-3. Local network discovery and terminal interface.
-4. Polished branding, versioning, attribution and repeatable GitHub Actions build.
-
-The rootless engine uses the pinned StrykerOSS v6 rootless component URLs and published SHA-256 checksums. This project retains required open-source attribution and is not an official StrykerOSS product.
-
-### Safety
-Use only on systems and networks you own or are explicitly authorized to assess.
+No synthetic traffic data is generated. Ganesh mandals, processions, diversions, parking, crowd and emergency intelligence are reserved for later phases.
