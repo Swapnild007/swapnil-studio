@@ -37,7 +37,7 @@ async function incidents(){
       const cat=(x.properties?.iconCategory||'incident').replace(/([A-Z])/g,' $1');
       return '<div class="incident"><b>'+esc(cat)+'</b><span>Live traffic event</span></div>';
     }).join('')||'No current incidents returned.';
-    setState(flowLoaded?'LIVE':'LIVE FEED');
+    setState('MANUAL');
   }catch(e){
     setState('OFFLINE',true);
     q('#list').textContent=e.message||'Live feed unavailable.';
@@ -55,8 +55,8 @@ function refresh(){
     keepBuffer:2,
     zIndex:450
   });
-  flow.on('load',()=>{flowLoaded=true;setState('LIVE')});
-  flow.on('tileerror',()=>{if(!flowLoaded)setState('LIVE FEED')});
+  flow.on('load',()=>{flowLoaded=true;setState('MANUAL')});
+  flow.on('tileerror',()=>{if(!flowLoaded)setState('MANUAL')});
   flow.addTo(map);
   q('#updated').textContent=new Date().toLocaleTimeString();
   incidents();
