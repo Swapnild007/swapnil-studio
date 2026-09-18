@@ -4,6 +4,7 @@ let flow=null;
 let flowLoaded=false;
 const markers=L.layerGroup().addTo(map);
 const bbox='73.70,18.40,74.05,18.75';
+const AUTO_REFRESH_MS=0;
 const q=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
@@ -83,4 +84,4 @@ async function road(lat,lng){
 map.on('click',e=>road(e.latlng.lat,e.latlng.lng));
 q('#refresh').onclick=refresh;
 refresh();
-setInterval(refresh,60000);
+if(AUTO_REFRESH_MS>0)setInterval(refresh,AUTO_REFRESH_MS);
