@@ -116,6 +116,9 @@ function drawWalkingRoute(){
 function showRouteOnMap(){
   if(!routeGeoJSON||!activeDestination){toast("Route is not ready yet.");return}
   $("#directionModal").classList.remove("open");
+  // Directions can be opened from the place sheet. Close that sheet too,
+  // otherwise it remains above the map and makes the map appear not to open.
+  $("#placeModal").classList.remove("open");
   showTab("map");
   setTimeout(()=>{
     if(!map)initMap();
