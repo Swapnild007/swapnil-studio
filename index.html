@@ -1,1 +1,58 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pune Traffic Command Center</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="style.css"></head><body><header><b>◉ PUNE TRAFFIC COMMAND CENTER</b><span id="state">CONNECTING</span><button id="refresh">↻</button></header><main><section id="map"></section><aside><div class="card"><small>NETWORK</small><h2>Pune + PCMC</h2><div class="stats"><div>INCIDENTS<strong id="inc">—</strong></div><div>CLOSURES<strong id="closed">—</strong></div></div><p>Last update <b id="updated">—</b></p></div><div class="card"><small>SELECTED ROAD</small><h2 id="road">Tap a road</h2><div id="details">Select a traffic segment on the map.</div></div><div class="card"><small>LIVE INCIDENTS</small><div id="list">Waiting for live incident feed.</div></div></aside></main><footer>TomTom Traffic API · Live only · refresh 60 sec</footer><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="app.js"></script></body></html>
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pune Traffic Command Center</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="brand-dot">●</span><b>PUNE TRAFFIC COMMAND CENTER</b></div>
+  <div class="live-state"><span class="live-dot"></span><span id="state">CONNECTING</span></div>
+  <button id="refresh" aria-label="Refresh live traffic">↻</button>
+</header>
+
+<main>
+  <section class="map-wrap">
+    <div id="map"></div>
+    <div class="traffic-legend" aria-label="Traffic speed legend">
+      <div class="legend-title">LIVE TRAFFIC</div>
+      <div class="legend-row"><i class="l-free"></i><span>Free flow</span></div>
+      <div class="legend-row"><i class="l-slow"></i><span>Slow</span></div>
+      <div class="legend-row"><i class="l-heavy"></i><span>Heavy</span></div>
+      <div class="legend-row"><i class="l-jam"></i><span>Severe</span></div>
+    </div>
+    <div class="map-note">TomTom live flow · relative to free-flow</div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <small>NETWORK</small>
+      <h2>Pune + PCMC</h2>
+      <div class="stats">
+        <div>INCIDENTS<strong id="inc">—</strong></div>
+        <div>CLOSURES<strong id="closed">—</strong></div>
+      </div>
+      <p>Last update <b id="updated">—</b></p>
+    </div>
+
+    <div class="card">
+      <small>SELECTED ROAD</small>
+      <h2 id="road">Tap a road</h2>
+      <div id="details">Select a traffic segment on the map.</div>
+    </div>
+
+    <div class="card">
+      <small>LIVE INCIDENTS</small>
+      <div id="list">Waiting for live incident feed.</div>
+    </div>
+  </aside>
+</main>
+
+<footer>TomTom Traffic API · Live only · refresh 60 sec</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
