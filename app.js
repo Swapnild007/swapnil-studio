@@ -53,11 +53,38 @@ async function openDirections(lat,lng){
       const route=d.routes?.[0];
       if(!route)throw new Error("No walking route found");
       routeGeoJSON=route.geometry;
-      const mins=Math.max(1,Math.round(route.duration/60)),km=(route.distance/1000).toFixed(1);
-      $("#directionSummary").innerHTML=`<b>${mins} min</b><span>·</span><b>${km} km</b><span>·</span><span>Walking</span>`;
-      $("#directionSteps").innerHTML=(route.legs?.[0]?.steps||[]).slice(0,12).map((s,i)=>{
+      const kmValue=route.distance/1000;
+      const km=kmValue.toFixed(1);
+      // Some public OSRM foot instances can return an implausibly short duration.
+      // Keep the route geometry/steps from the router, but calculate a sane walking ETA.
+      const routerMins=Number(route.duration)/60;
+      const walkingMins=Math.max(1,Math.round(kmValue/5*60));
+      const mins=(routerMins/kmValue>=3 && routerMins/kmValue<=20)
+        ? Math.max(1,Math.round(routerMins))
+        : walkingMins;
+      $("#directionSummary").innerHTML=`<b>${mins} min</b><span>·</span><b>${km} km</b><span>·</span><span>Walking · estimated</span>`;
+      const maneuverText=(m)=>{
+        const type=m?.type||"";
+        const mod=m?.modifier||"";
+        if(type==="depart") return "Start walking";
+        if(type==="arrive") return "You have arrived";
+        if(type==="roundabout"||type==="rotary") return "Enter the roundabout";
+        const map={
+          left:"Turn left",
+          right:"Turn right",
+          straight:"Continue straight",
+          "slight left":"Bear left",
+          "slight right":"Bear right",
+          "sharp left":"Sharp left",
+          "sharp right":"Sharp right",
+          uturn:"Make a U-turn"
+        };
+        return map[mod]||"Continue";
+      };
+      const steps=route.legs?.[0]?.steps||[];
+      $("#directionSteps").innerHTML=steps.slice(0,12).map((s,i)=>{
         const name=s.name||"Unnamed road";
-        const maneuver=s.maneuver?.instruction||"Continue";
+        const maneuver=maneuverText(s.maneuver);
         return `<div class="direction-step"><span class="step-num">${i+1}</span><div><b>${esc(maneuver)}</b><small>${esc(name)} · ${Math.round(s.distance)} m</small></div></div>`;
       }).join("")||'<div class="direction-step"><span class="step-num">✓</span><div><b>Follow the route to your destination</b></div></div>';
     }catch(e){
