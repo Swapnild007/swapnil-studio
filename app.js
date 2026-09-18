@@ -1,87 +1,46 @@
-const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([18.5204,73.8567],12);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-
-let flow=null;
-let flowLoaded=false;
-const markers=L.layerGroup().addTo(map);
-const bbox='73.70,18.40,74.05,18.75';
-const AUTO_REFRESH_MS=0;
-const q=s=>document.querySelector(s);
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-
-function setState(text,offline=false){
-  q('#state').textContent=text;
-  q('.live-state').classList.toggle('offline',offline);
-}
-
-async function incidents(){
-  try{
-    const r=await fetch('/api/incidents?bbox='+bbox,{cache:'no-store'});
-    if(!r.ok){
-      let msg='Live incident feed unavailable';
-      try{const e=await r.json();if(e.error)msg=e.error}catch{}
-      throw new Error(msg);
-    }
-    const d=await r.json(),a=Array.isArray(d.incidents)?d.incidents:[];
-    markers.clearLayers();
-    let c=0;
-    a.forEach(x=>{
-      const p=x.geometry?.coordinates;
-      if(!p||typeof p[0]!=='number'||typeof p[1]!=='number')return;
-      const cat=x.properties?.iconCategory||'incident';
-      if(cat==='roadClosed'||cat==='laneClosed')c++;
-      L.marker([p[1],p[0]]).bindPopup('<b>'+esc(cat.replace(/([A-Z])/g,' $1'))+'</b><br><span>Live traffic event</span>').addTo(markers);
-    });
-    q('#inc').textContent=a.length;
-    q('#closed').textContent=c;
-    q('#list').innerHTML=a.slice(0,10).map(x=>{
-      const cat=(x.properties?.iconCategory||'incident').replace(/([A-Z])/g,' $1');
-      return '<div class="incident"><b>'+esc(cat)+'</b><span>Live traffic event</span></div>';
-    }).join('')||'No current incidents returned.';
-    setState('MANUAL');
-  }catch(e){
-    setState('OFFLINE',true);
-    q('#list').textContent=e.message||'Live feed unavailable.';
-  }
-}
-
-function refresh(){
-  flowLoaded=false;
-  if(flow)map.removeLayer(flow);
-  flow=L.tileLayer('/api/flow/{z}/{x}/{y}?style=light&tileSize=256',{
-    opacity:.96,
-    maxZoom:19,
-    minZoom:8,
-    updateWhenIdle:true,
-    keepBuffer:2,
-    zIndex:450
-  });
-  flow.on('load',()=>{flowLoaded=true;setState('MANUAL')});
-  flow.on('tileerror',()=>{if(!flowLoaded)setState('MANUAL')});
-  flow.addTo(map);
-  q('#updated').textContent=new Date().toLocaleTimeString();
-  incidents();
-}
-
-async function road(lat,lng){
-  q('#road').textContent='Loading…';
-  q('#details').textContent='Reading live road segment…';
-  try{
-    const r=await fetch('/api/flow-segment?lat='+encodeURIComponent(lat)+'&lng='+encodeURIComponent(lng),{cache:'no-store'});
-    if(!r.ok)throw new Error('Live road detail unavailable.');
-    const f=(await r.json()).flowSegmentData;
-    if(!f)throw new Error('No traffic segment returned.');
-    const current=Number(f.currentSpeed);
-    const free=Number(f.freeFlowSpeed);
-    const red=free>0?Math.max(0,Math.round((1-current/free)*100)):0;
-    const level=red>=65?'Severe':red>=40?'Heavy':red>=15?'Slow':'Free flow';
-    q('#road').textContent='Selected road';
-    q('#details').innerHTML='<span class="traffic-value">'+esc(current)+' km/h</span> current · '+esc(free)+' km/h free-flow<br>Speed reduction: <b>'+red+'%</b> <span class="traffic-badge">'+level+'</span><br>Travel time: '+esc(f.currentTravelTime)+' sec · Confidence: '+Math.round(Number(f.confidence||0)*100)+'%<br>Closure: <b>'+(f.roadClosure?'YES':'No')+'</b>';
-  }catch(e){
-    q('#details').textContent=e.message||'Live road detail unavailable.';
-  }
-}
-
-map.on('click',e=>road(e.latlng.lat,e.latlng.lng));
-q('#refresh').onclick=refresh;
-refresh();
-if(AUTO_REFRESH_MS>0)setInterval(refresh,AUTO_REFRESH_MS);
+const places=[
+{id:1,name:"Shrimant Dagdusheth Halwai Ganpati",mr:"श्रीमंत दगडूशेठ हलवाई गणपती",area:"Budhwar Peth",type:"Famous",lat:18.5167,lng:73.8562,rank:"Iconic"},
+{id:2,name:"Shri Kasba Ganpati",mr:"श्री कसबा गणपती",area:"Kasba Peth",type:"Manache Paach",lat:18.5206,lng:73.8560,rank:"#1"},
+{id:3,name:"Tambdi Jogeshwari Ganpati",mr:"तांबडी जोगेश्वरी गणपती",area:"Budhwar Peth",type:"Manache Paach",lat:18.5160,lng:73.8550,rank:"#2"},
+{id:4,name:"Guruji Talim Ganpati",mr:"गुरुजी तालीम गणपती",area:"Budhwar Peth",type:"Manache Paach",lat:18.5151,lng:73.8541,rank:"#3"},
+{id:5,name:"Tulshibaug Ganpati",mr:"तुळशीबाग गणपती",area:"Budhwar Peth",type:"Manache Paach",lat:18.5128,lng:73.8563,rank:"#4"},
+{id:6,name:"Kesariwada Ganpati",mr:"केसरीवाडा गणपती",area:"Narayan Peth",type:"Manache Paach",lat:18.5184,lng:73.8507,rank:"#5"},
+{id:7,name:"Akhil Mandai Mandal",mr:"अखिल मंडई मंडळ",area:"Shukrawar Peth",type:"Famous",lat:18.5134,lng:73.8555,rank:"Famous"},
+{id:8,name:"Chhatrapati Rajaram Mandal",mr:"छत्रपती राजाराम मंडळ",area:"Sadashiv Peth",type:"Famous",lat:18.5108,lng:73.8485,rank:"Famous"},
+{id:9,name:"Shri Siddhivinayak, Sarasbaug",mr:"श्री सिद्धिविनायक, सारसबाग",area:"Sadashiv Peth",type:"Temple",lat:18.4974,lng:73.8546,rank:"Temple"},
+{id:10,name:"Shri Morya Gosavi Ganpati Mandir",mr:"श्री मोरया गोसावी गणपती मंदिर",area:"Chinchwad",type:"Temple",lat:18.6298,lng:73.7997,rank:"Temple"},
+{id:11,name:"Shrimant Bhausaheb Rangari Ganpati",mr:"श्रीमंत भाऊसाहेब रंगारी गणपती",area:"Budhwar Peth",type:"Historic",lat:18.5158,lng:73.8509,rank:"Historic"},
+{id:12,name:"Hutatma Babu Genu Mandal",mr:"हुतात्मा बाबू गेनू मंडळ",area:"Budhwar Peth",type:"Historic",lat:18.5164,lng:73.8519,rank:"Historic"}
+];
+const routes=[
+["Dagdusheth & the Manache Paach","6 stops","about 3 hr 8 min","Five ceremonial stops with Dagdusheth on the way."],
+["Manache 5 Sakal Walk","5 stops","about 1 hr 55 min","All five Manache Paach before the peths fill up."],
+["90-minute peth express","4 stops","about 1 hr 16 min","A compact walk for a short evening."],
+["Historic peth stroll","5 stops","about 1 hr 48 min","Historic mandals, wadas and talims."]
+];
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let activeTab="home",filter="All",saved=JSON.parse(localStorage.getItem("puneSaved")||"[]"),map=null,markers=[],userPos=null;
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function showTab(tab){activeTab=tab==="map"?"mapScreen":tab; $$(".screen").forEach(x=>x.classList.toggle("active",x.id===activeTab));$$(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab));window.scrollTo({top:0,behavior:"smooth"});if(tab==="map")setTimeout(initMap,60)}
+function toast(t){const x=$("#toast");x.textContent=t;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),2200)}
+function placeCard(p){return `<article class="place" data-id="${p.id}"><span class="num">${esc(p.rank)}</span><h3>${esc(p.name)}</h3><p>${esc(p.area)} · ${esc(p.type)}</p></article>`}
+function exploreItem(p){return `<div class="explore-item" data-id="${p.id}"><span class="avatar">ॐ</span><div><b>${esc(p.name)}</b><small>${esc(p.mr)} · ${esc(p.area)}</small></div><button class="save" data-save="${p.id}">${saved.includes(p.id)?"♥":"♡"}</button></div>`}
+function renderHome(){ $("#routeCards").innerHTML=routes.map(r=>`<article class="route-card"><div><span class="eyebrow">DARSHAN MARG</span><h3>${r[0]}</h3><p>${r[3]}</p></div><span class="route-meta">${r[1]} · ${r[2]}</span></article>`).join("");$("#featured").innerHTML=places.slice(0,8).map(placeCard).join("");$("#manache").innerHTML=places.slice(1,6).map(p=>`<button data-id="${p.id}"><strong>${p.rank}</strong><b>${esc(p.name.replace(" Ganpati",""))}</b><small>${esc(p.area)}</small></button>`).join("")}
+function renderExplore(){const types=["All","Famous","Manache Paach","Historic","Temple"];$("#filters").innerHTML=types.map(t=>`<button class="filter ${filter===t?"active":""}" data-filter="${t}">${t}</button>`).join("");const q=($("#search")?.value||"").toLowerCase();const list=places.filter(p=>(filter==="All"||p.type===filter)&&(p.name+" "+p.mr+" "+p.area).toLowerCase().includes(q));$("#exploreList").innerHTML=list.map(exploreItem).join("")||'<div class="source-card">No matching places yet.</div>'}
+function renderSaved(){const list=places.filter(p=>saved.includes(p.id));$("#savedList").innerHTML=list.length?list.map(exploreItem).join(""):'<div class="source-card"><b>Nothing saved yet.</b><p>Tap ♡ on any place to keep it here.</p></div>'}
+function openPlace(id){const p=places.find(x=>x.id===Number(id));if(!p)return;$("#placeDetail").innerHTML=`<div class="page-head" style="padding:35px 0 10px"><span class="eyebrow">${esc(p.type.toUpperCase())}</span><h1 style="font-size:44px">${esc(p.name)}</h1><p>${esc(p.mr)}<br>${esc(p.area)}, Pune</p></div><div class="source-card"><b>Plan a visit</b><p>Use the map to see this place, save it, or open walking directions.</p><div style="display:flex;gap:8px;margin-top:12px"><button class="primary" style="flex:1" onclick="openDirections(${p.lat},${p.lng})">Directions →</button><button class="choice" onclick="toggleSave(${p.id})">${saved.includes(p.id)?"♥ Saved":"♡ Save"}</button></div></div>`;$("#placeModal").classList.add("open")}
+function toggleSave(id){id=Number(id);saved=saved.includes(id)?saved.filter(x=>x!==id):[...saved,id];localStorage.setItem("puneSaved",JSON.stringify(saved));renderExplore();renderSaved();toast(saved.includes(id)?"Saved to your Pune":"Removed from saved")}
+function openDirections(lat,lng){window.open("https://www.google.com/maps/dir/?api=1&destination="+lat+","+lng,"_blank","noopener");}
+function initMap(){if(map)return;map=new maplibregl.Map({container:"map",style:"https://tiles.openfreemap.org/styles/liberty",center:[73.8567,18.5204],zoom:13.1});map.addControl(new maplibregl.NavigationControl({showCompass:false}),"bottom-right");map.on("load",()=>{places.forEach(p=>addMarker(p));renderMapList()})}
+function addMarker(p){const el=document.createElement("button");el.className="map-pin";el.textContent="ॐ";el.style.cssText="width:34px;height:34px;border-radius:12px;border:2px solid white;background:#b85b25;color:white;box-shadow:0 7px 20px #0004;font-size:16px;cursor:pointer";el.onclick=()=>openPlace(p.id);new maplibregl.Marker({element:el}).setLngLat([p.lng,p.lat]).addTo(map)}
+function renderMapList(){$("#mapList").innerHTML=places.slice(0,6).map(exploreItem).join("")}
+function locate(){if(!navigator.geolocation){toast("Location is not available in this browser.");return}navigator.geolocation.getCurrentPosition(pos=>{userPos=[pos.coords.longitude,pos.coords.latitude];if(map){map.flyTo({center:userPos,zoom:15});new maplibregl.Marker({color:"#211e19"}).setLngLat(userPos).addTo(map)}toast("Showing places near you")},()=>toast("Location permission was not granted."))}
+function buildPlan(){const min=Number($(".choice.active[data-min]")?.dataset.min||90);const pref=$(".choice.active[data-pref]")?.dataset.pref||"famous";let pool=pref==="manache"?places.slice(1,6):pref==="historic"?places.filter(p=>p.type==="Historic"):pref==="quiet"?places.slice(1,5):places.filter(p=>["Famous","Manache Paach"].includes(p.type));const count=min<=90?3:min<=120?4:5;pool=pool.slice(0,count);$("#planResult").innerHTML=`<div class="plan-card"><span class="eyebrow">YOUR ${min>=120?min/60+" HOUR":"90 MINUTE"} PLAN</span><h2 style="font:500 29px Georgia,serif;margin:8px 0 14px">${pool.length} stops · walkable evening</h2>${pool.map((p,i)=>`<div class="plan-stop"><strong>0${i+1}</strong><div><b>${esc(p.name)}</b><small>${esc(p.area)} · ${i===0?"Start here":"Next stop"}</small></div></div>`).join("")}<button class="primary" style="margin-top:10px" onclick="showTab('map')">Open in map →</button></div>`;$("planResult").scrollIntoView({behavior:"smooth"})}
+document.addEventListener("click",e=>{const tab=e.target.closest("[data-tab]");if(tab){e.preventDefault();showTab(tab.dataset.tab)}const f=e.target.closest("[data-filter]");if(f){filter=f.dataset.filter;renderExplore()}const p=e.target.closest("[data-id]");if(p&&!e.target.closest("[data-save]"))openPlace(p.dataset.id);const s=e.target.closest("[data-save]");if(s){e.stopPropagation();toggleSave(s.dataset.save)}})
+$("#openSearch").onclick=()=>{$("#searchModal").classList.add("open");setTimeout(()=>$("#modalSearch").focus(),50)}
+$("#closeSearch").onclick=()=>$("#searchModal").classList.remove("open");$("#searchModal .modal-backdrop").onclick=()=>$("#searchModal").classList.remove("open");$("#closePlace").onclick=()=>$("#placeModal").classList.remove("open");$("#placeModal .modal-backdrop").onclick=()=>$("#placeModal").classList.remove("open");$("#lang").onclick=()=>toast("मराठी interface is coming next");$("#sources").onclick=()=>toast("OpenFreeMap + OpenStreetMap • community data clearly labelled");$("#locate").onclick=locate;$("#myLocation").onclick=locate;$("#buildPlan").onclick=buildPlan;
+$("#timeChoices").onclick=e=>{const b=e.target.closest(".choice");if(!b)return;$$("#timeChoices .choice").forEach(x=>x.classList.remove("active"));b.classList.add("active")};
+$(".planner").onclick=e=>{const b=e.target.closest("[data-pref]");if(!b)return;$$("[data-pref]").forEach(x=>x.classList.remove("active"));b.classList.add("active")};
+$("#search").oninput=renderExplore;
+$("#modalSearch").oninput=e=>{const q=e.target.value.toLowerCase();const r=places.filter(p=>(p.name+" "+p.mr+" "+p.area).toLowerCase().includes(q)).slice(0,7);$("#searchResults").innerHTML=r.map(exploreItem).join("")||"<p style='color:var(--muted);padding:15px'>Start typing to search Pune.</p>"};
+renderHome();renderExplore();renderSaved();
