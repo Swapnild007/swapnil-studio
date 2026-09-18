@@ -1,3 +1,4 @@
+/* PUNE_DARSHAN_BUILD: 2026-09-19-route-map-fix */
 const places=[
 {id:1,name:"Shrimant Dagdusheth Halwai Ganpati",mr:"श्रीमंत दगडूशेठ हलवाई गणपती",area:"Budhwar Peth",type:"Famous",lat:18.5167,lng:73.8562,rank:"Iconic"},
 {id:2,name:"Shri Kasba Ganpati",mr:"श्री कसबा गणपती",area:"Kasba Peth",type:"Manache Paach",lat:18.5206,lng:73.8560,rank:"#1"},
