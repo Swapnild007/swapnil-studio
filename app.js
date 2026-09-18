@@ -96,20 +96,31 @@ async function openDirections(lat,lng){
     $("#directionSteps").innerHTML="";
   },{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
 }
+function drawWalkingRoute(){
+  if(!map||!routeGeoJSON)return;
+  const draw=()=>{
+    if(map.getLayer("walking-route"))map.removeLayer("walking-route");
+    if(map.getSource("walking-route"))map.removeSource("walking-route");
+    map.addSource("walking-route",{type:"geojson",data:{type:"Feature",geometry:routeGeoJSON}});
+    map.addLayer({id:"walking-route",type:"line",source:"walking-route",paint:{"line-color":"#007aff","line-width":6,"line-opacity":.9,"line-blur":.4}});
+    const coords=routeGeoJSON.coordinates||[];
+    if(coords.length){
+      const bounds=coords.reduce((b,c)=>b.extend(c),new maplibregl.LngLatBounds(coords[0],coords[0]));
+      map.resize();
+      map.fitBounds(bounds,{padding:70,maxZoom:16,duration:900});
+    }
+    toast("Walking route shown on the map");
+  };
+  if(map.loaded())draw();else map.once("load",draw);
+}
 function showRouteOnMap(){
   if(!routeGeoJSON||!activeDestination){toast("Route is not ready yet.");return}
   $("#directionModal").classList.remove("open");
   showTab("map");
   setTimeout(()=>{
-    if(!map)return;
-    if(map.getSource("walking-route"))map.removeLayer("walking-route"),map.removeSource("walking-route");
-    map.addSource("walking-route",{type:"geojson",data:{type:"Feature",geometry:routeGeoJSON}});
-    map.addLayer({id:"walking-route",type:"line",source:"walking-route",paint:{"line-color":"#007aff","line-width":6,"line-opacity":.88,"line-blur":.5}});
-    const coords=routeGeoJSON.coordinates;
-    const bounds=coords.reduce((b,c)=>b.extend(c),new maplibregl.LngLatBounds(coords[0],coords[0]));
-    map.fitBounds(bounds,{padding:70,maxZoom:16,duration:900});
-    toast("Walking route shown on the map");
-  },100);
+    if(!map)initMap();
+    setTimeout(()=>drawWalkingRoute(),120);
+  },150);
 }
 function initMap(){if(map)return;map=new maplibregl.Map({container:"map",style:"https://tiles.openfreemap.org/styles/liberty",center:[73.8567,18.5204],zoom:13.1});map.addControl(new maplibregl.NavigationControl({showCompass:false}),"bottom-right");map.on("load",()=>{places.forEach(p=>addMarker(p));renderMapList()})}
 function addMarker(p){const el=document.createElement("button");el.className="map-pin";el.textContent="ॐ";el.style.cssText="width:34px;height:34px;border-radius:12px;border:2px solid white;background:#b85b25;color:white;box-shadow:0 7px 20px #0004;font-size:16px;cursor:pointer";el.onclick=()=>openPlace(p.id);new maplibregl.Marker({element:el}).setLngLat([p.lng,p.lat]).addTo(map)}
