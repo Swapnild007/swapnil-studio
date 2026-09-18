@@ -1,58 +1,103 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Pune Traffic Command Center</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<meta name="theme-color" content="#f7f5ef">
+<title>Pune Darshan • City Guide</title>
+<link rel="preconnect" href="https://tiles.openfreemap.org">
+<link href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <div class="brand"><span class="brand-dot">●</span><b>PUNE TRAFFIC COMMAND CENTER</b></div>
-  <div class="live-state"><span class="live-dot"></span><span id="state">MANUAL</span></div>
-  <button id="refresh" aria-label="Refresh traffic">↻</button>
-</header>
-
-<main>
-  <section class="map-wrap">
-    <div id="map"></div>
-    <div class="traffic-legend" aria-label="Traffic speed legend">
-      <div class="legend-title">TRAFFIC</div>
-      <div class="legend-row"><i class="l-free"></i><span>Free flow</span></div>
-      <div class="legend-row"><i class="l-slow"></i><span>Slow</span></div>
-      <div class="legend-row"><i class="l-heavy"></i><span>Heavy</span></div>
-      <div class="legend-row"><i class="l-jam"></i><span>Severe</span></div>
+<div class="app">
+  <header class="topbar">
+    <a class="wordmark" href="#" data-tab="home"><span class="mark">ॐ</span><span><b>PUNE</b><small>DARSHAN</small></span></a>
+    <div class="top-actions">
+      <button class="icon-btn" id="locate" aria-label="Use my location">⌖</button>
+      <button class="icon-btn" id="lang" aria-label="Change language">अ</button>
     </div>
-    <div class="map-note">TomTom flow · manual refresh</div>
-  </section>
+  </header>
 
-  <aside>
-    <div class="card">
-      <small>NETWORK</small>
-      <h2>Pune + PCMC</h2>
-      <div class="stats">
-        <div>INCIDENTS<strong id="inc">—</strong></div>
-        <div>CLOSURES<strong id="closed">—</strong></div>
+  <main>
+    <section id="home" class="screen active">
+      <div class="hero">
+        <div class="eyebrow"><span class="pulse"></span> PUNE • DAY 6 OF 12</div>
+        <h1>Experience<br><em>Pune</em> differently.</h1>
+        <p>Find mandals, see what is nearby, and build a darshan that actually fits your evening.</p>
+        <button class="searchbar" id="openSearch"><span>⌕</span><span>Search mandal, area or place…</span><kbd>⌘ K</kbd></button>
       </div>
-      <p>Last load <b id="updated">—</b></p>
-    </div>
 
-    <div class="card">
-      <small>SELECTED ROAD</small>
-      <h2 id="road">Tap a road</h2>
-      <div id="details">Select a traffic segment on the map.</div>
-    </div>
+      <div class="quick-grid">
+        <button class="quick" data-tab="map"><span class="quick-icon">⌖</span><b>Live Map</b><small>Explore nearby</small></button>
+        <button class="quick" data-tab="plan"><span class="quick-icon">✦</span><b>Plan My Evening</b><small>Build a route</small></button>
+        <button class="quick" data-tab="explore"><span class="quick-icon">◌</span><b>Explore</b><small>Places & mandals</small></button>
+      </div>
 
-    <div class="card">
-      <small>TRAFFIC INCIDENTS</small>
-      <div id="list">Waiting for live incident feed.</div>
-    </div>
-  </aside>
-</main>
+      <section class="section">
+        <div class="section-head"><div><span class="eyebrow">CURATED</span><h2>Good for right now</h2></div><button class="text-btn" data-tab="plan">See all →</button></div>
+        <div class="route-scroller" id="routeCards"></div>
+      </section>
 
-<footer>TomTom Traffic API · Manual refresh</footer>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <section class="section">
+        <div class="section-head"><div><span class="eyebrow">ICONIC</span><h2>Pune's best known</h2></div><button class="text-btn" data-tab="explore">See all →</button></div>
+        <div class="place-grid" id="featured"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><div><span class="eyebrow">FIVE IN ORDER</span><h2>Manache Paach</h2></div></div>
+        <div class="manache" id="manache"></div>
+      </section>
+
+      <section class="source-card">
+        <div><span class="source-icon">◎</span><div><b>Built with open data</b><p>OpenFreeMap + OpenStreetMap maps. Curated Pune information is clearly identified by source.</p></div><button class="text-btn" id="sources">Sources →</button></div>
+      </section>
+    </section>
+
+    <section id="explore" class="screen">
+      <div class="page-head"><span class="eyebrow">EXPLORE</span><h1>Find your Pune.</h1><p>Places, mandals and areas worth knowing.</p></div>
+      <div class="filters" id="filters"></div>
+      <div class="search-inline"><span>⌕</span><input id="search" placeholder="Search Pune…" autocomplete="off"></div>
+      <div class="explore-list" id="exploreList"></div>
+    </section>
+
+    <section id="mapScreen" class="screen">
+      <div class="map-head"><div><span class="eyebrow">DISCOVER</span><h1>Pune on the map.</h1></div><button class="pill" id="myLocation">◎ Near me</button></div>
+      <div class="map-wrap"><div id="map"></div><div class="map-overlay"><button class="map-chip active">Ganpati</button><button class="map-chip">Parking</button><button class="map-chip">Metro</button></div></div>
+      <div class="map-list" id="mapList"></div>
+    </section>
+
+    <section id="plan" class="screen">
+      <div class="page-head"><span class="eyebrow">PLAN</span><h1>Your evening,<br><em>well spent.</em></h1><p>Choose your time and the kind of experience you want.</p></div>
+      <div class="planner">
+        <label>TIME AVAILABLE</label><div class="choice-row" id="timeChoices"><button class="choice active" data-min="90">90 min</button><button class="choice" data-min="120">2 hours</button><button class="choice" data-min="180">3 hours</button></div>
+        <label>WHAT DO YOU WANT?</label><div class="choice-row wrap"><button class="choice active" data-pref="famous">Iconic</button><button class="choice" data-pref="manache">Manache Paach</button><button class="choice" data-pref="historic">Historic</button><button class="choice" data-pref="quiet">Less walking</button></div>
+        <label>START FROM</label><button class="start-card" id="startCard"><span>⌖</span><div><b>My current location</b><small>We'll keep it on your device.</small></div><span>›</span></button>
+        <button class="primary" id="buildPlan">Build my evening <span>→</span></button>
+      </div>
+      <div class="plan-result" id="planResult"></div>
+    </section>
+
+    <section id="saved" class="screen">
+      <div class="page-head"><span class="eyebrow">SAVED</span><h1>Your places.</h1><p>Your shortlist stays on this device.</p></div>
+      <div id="savedList" class="explore-list"></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="home"><span>⌂</span><small>Home</small></button>
+    <button class="nav-item" data-tab="explore"><span>◉</span><small>Explore</small></button>
+    <button class="nav-item center" data-tab="map"><span>⌖</span><small>Map</small></button>
+    <button class="nav-item" data-tab="plan"><span>✦</span><small>Plan</small></button>
+    <button class="nav-item" data-tab="saved"><span>♡</span><small>Saved</small></button>
+  </nav>
+</div>
+
+<div class="modal" id="searchModal"><div class="modal-backdrop"></div><div class="sheet"><div class="sheet-grab"></div><div class="sheet-title"><h2>Search Pune</h2><button id="closeSearch">×</button></div><div class="search-inline big"><span>⌕</span><input id="modalSearch" placeholder="Mandal, area, temple…" autofocus></div><div id="searchResults"></div></div></div>
+<div class="modal" id="placeModal"><div class="modal-backdrop"></div><div class="sheet place-sheet"><div class="sheet-grab"></div><button class="close-float" id="closePlace">×</button><div id="placeDetail"></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
