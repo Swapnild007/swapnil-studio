@@ -30,7 +30,60 @@ function renderExplore(){const types=["All","Famous","Manache Paach","Historic",
 function renderSaved(){const list=places.filter(p=>saved.includes(p.id));$("#savedList").innerHTML=list.length?list.map(exploreItem).join(""):'<div class="source-card"><b>Nothing saved yet.</b><p>Tap ♡ on any place to keep it here.</p></div>'}
 function openPlace(id){const p=places.find(x=>x.id===Number(id));if(!p)return;$("#placeDetail").innerHTML=`<div class="page-head" style="padding:35px 0 10px"><span class="eyebrow">${esc(p.type.toUpperCase())}</span><h1 style="font-size:44px">${esc(p.name)}</h1><p>${esc(p.mr)}<br>${esc(p.area)}, Pune</p></div><div class="source-card"><b>Plan a visit</b><p>Use the map to see this place, save it, or open walking directions.</p><div style="display:flex;gap:8px;margin-top:12px"><button class="primary" style="flex:1" onclick="openDirections(${p.lat},${p.lng})">Directions →</button><button class="choice" onclick="toggleSave(${p.id})">${saved.includes(p.id)?"♥ Saved":"♡ Save"}</button></div></div>`;$("#placeModal").classList.add("open")}
 function toggleSave(id){id=Number(id);saved=saved.includes(id)?saved.filter(x=>x!==id):[...saved,id];localStorage.setItem("puneSaved",JSON.stringify(saved));renderExplore();renderSaved();toast(saved.includes(id)?"Saved to your Pune":"Removed from saved")}
-function openDirections(lat,lng){window.open("https://www.google.com/maps/dir/?api=1&destination="+lat+","+lng,"_blank","noopener");}
+let activeDestination=null,routeGeoJSON=null;
+async function openDirections(lat,lng){
+  activeDestination=[lng,lat];
+  const p=places.find(x=>Math.abs(x.lat-lat)<0.00001&&Math.abs(x.lng-lng)<0.00001);
+  $("#directionTitle").textContent=p?.name||"Walking directions";
+  $("#directionSummary").textContent="Getting your current location…";
+  $("#directionSteps").innerHTML='<div class="direction-loading"><span></span><span></span><span></span></div>';
+  $("#directionModal").classList.add("open");
+  if(!navigator.geolocation){
+    $("#directionSummary").textContent="Location is not available. Tap Near me on the map first.";
+    $("#directionSteps").innerHTML="";
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const from=[pos.coords.longitude,pos.coords.latitude];
+    try{
+      const u="https://router.project-osrm.org/route/v1/foot/"+from[0]+","+from[1]+";"+lng+","+lat+"?overview=full&geometries=geojson&steps=true";
+      const r=await fetch(u);
+      if(!r.ok)throw new Error("Routing service unavailable");
+      const d=await r.json();
+      const route=d.routes?.[0];
+      if(!route)throw new Error("No walking route found");
+      routeGeoJSON=route.geometry;
+      const mins=Math.max(1,Math.round(route.duration/60)),km=(route.distance/1000).toFixed(1);
+      $("#directionSummary").innerHTML=`<b>${mins} min</b><span>·</span><b>${km} km</b><span>·</span><span>Walking</span>`;
+      $("#directionSteps").innerHTML=(route.legs?.[0]?.steps||[]).slice(0,12).map((s,i)=>{
+        const name=s.name||"Unnamed road";
+        const maneuver=s.maneuver?.instruction||"Continue";
+        return `<div class="direction-step"><span class="step-num">${i+1}</span><div><b>${esc(maneuver)}</b><small>${esc(name)} · ${Math.round(s.distance)} m</small></div></div>`;
+      }).join("")||'<div class="direction-step"><span class="step-num">✓</span><div><b>Follow the route to your destination</b></div></div>';
+    }catch(e){
+      $("#directionSummary").textContent=e.message||"Could not build a walking route.";
+      $("#directionSteps").innerHTML="";
+    }
+  },()=>{
+    $("#directionSummary").textContent="Location permission is needed to calculate directions from you.";
+    $("#directionSteps").innerHTML="";
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+}
+function showRouteOnMap(){
+  if(!routeGeoJSON||!activeDestination){toast("Route is not ready yet.");return}
+  $("#directionModal").classList.remove("open");
+  showTab("map");
+  setTimeout(()=>{
+    if(!map)return;
+    if(map.getSource("walking-route"))map.removeLayer("walking-route"),map.removeSource("walking-route");
+    map.addSource("walking-route",{type:"geojson",data:{type:"Feature",geometry:routeGeoJSON}});
+    map.addLayer({id:"walking-route",type:"line",source:"walking-route",paint:{"line-color":"#007aff","line-width":6,"line-opacity":.88,"line-blur":.5}});
+    const coords=routeGeoJSON.coordinates;
+    const bounds=coords.reduce((b,c)=>b.extend(c),new maplibregl.LngLatBounds(coords[0],coords[0]));
+    map.fitBounds(bounds,{padding:70,maxZoom:16,duration:900});
+    toast("Walking route shown on the map");
+  },100);
+}
 function initMap(){if(map)return;map=new maplibregl.Map({container:"map",style:"https://tiles.openfreemap.org/styles/liberty",center:[73.8567,18.5204],zoom:13.1});map.addControl(new maplibregl.NavigationControl({showCompass:false}),"bottom-right");map.on("load",()=>{places.forEach(p=>addMarker(p));renderMapList()})}
 function addMarker(p){const el=document.createElement("button");el.className="map-pin";el.textContent="ॐ";el.style.cssText="width:34px;height:34px;border-radius:12px;border:2px solid white;background:#b85b25;color:white;box-shadow:0 7px 20px #0004;font-size:16px;cursor:pointer";el.onclick=()=>openPlace(p.id);new maplibregl.Marker({element:el}).setLngLat([p.lng,p.lat]).addTo(map)}
 function renderMapList(){$("#mapList").innerHTML=places.slice(0,6).map(exploreItem).join("")}
